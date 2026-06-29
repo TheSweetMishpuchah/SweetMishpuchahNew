@@ -1216,6 +1216,36 @@
   .muted-note { font-size: 0.82rem; color: var(--charcoal-light); line-height: 1.6; }
 
   @media (max-width: 900px){ .nav-utils { gap: 0.6rem; } }
+  /* Gluten-free badge, order option, gallery marker, admin toggles */
+  .gf-badge { display:inline-block; margin-left:0.5rem; vertical-align:middle; font-family:'DM Sans',sans-serif;
+    font-size:0.62rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase;
+    color:#3f7d3a; background:rgba(95,160,80,0.16); border:1px solid rgba(95,160,80,0.4); border-radius:999px; padding:0.2rem 0.6rem; }
+  .gf-choice { display:flex; align-items:center; gap:0.55rem; margin-bottom:1rem; font-size:0.9rem; color:var(--charcoal-mid);
+    background:rgba(95,160,80,0.1); border:1px solid rgba(95,160,80,0.3); border-radius:6px; padding:0.65rem 0.85rem; cursor:pointer; }
+  .gf-choice input { width:16px; height:16px; cursor:pointer; flex-shrink:0; }
+  .gallery-gf { position:absolute; top:8px; left:8px; z-index:2; font-size:0.56rem; font-weight:600; letter-spacing:0.05em;
+    color:#fff; background:rgba(63,125,58,0.92); border-radius:999px; padding:0.15rem 0.5rem; }
+  .gf-row { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; padding:0.5rem 0; border-bottom:1px solid rgba(42,33,24,0.07); font-size:0.88rem; }
+  .gf-toggle { border:1px solid rgba(42,33,24,0.2); background:var(--cream); border-radius:999px; cursor:pointer;
+    font-family:'DM Sans',sans-serif; font-size:0.66rem; letter-spacing:0.05em; text-transform:uppercase; padding:0.3rem 0.85rem; color:var(--charcoal-mid); transition:all 0.18s; }
+  .gf-toggle.on { background:#3f7d3a; color:#fff; border-color:#3f7d3a; }
+  .gf-list { max-height:360px; overflow:auto; margin-top:0.5rem; padding-right:0.3rem; }
+
+  /* Review avatar can now hold a photo of the cake they ordered */
+  .review-avatar { overflow: hidden; }
+  .review-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* Admin cake-photo manager */
+  .adminphoto-preview { max-width: 100%; max-height: 180px; border-radius: 6px; display:block; box-shadow: var(--shadow); }
+  .adminphoto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px,1fr)); gap: 0.6rem; margin-top: 0.5rem; }
+  .adminphoto { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid rgba(42,33,24,0.12); }
+  .adminphoto img { width: 100%; height: 88px; object-fit: cover; display: block; }
+  .adminphoto.is-hidden img { opacity: 0.35; filter: grayscale(0.7); }
+  .adminphoto .ap-toggle { position: absolute; bottom: 0; left: 0; right: 0; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 0.25rem; background: rgba(42,33,24,0.78); color: #fff; }
+  .adminphoto.is-hidden .ap-toggle { background: rgba(46,125,79,0.85); }
+  .adminphoto-empty { font-size: 0.82rem; color: var(--charcoal-light); padding: 0.4rem 0; }
 </style>
 </head>
 <body>
@@ -1478,8 +1508,9 @@
             <input type="email" class="form-input" id="custEmail" data-i18n-ph="order.emailPh" placeholder="you@example.com">
           </div>
           <div class="form-group">
-            <label class="form-label" data-i18n="order.writing">Cake Writing</label>
-            <textarea class="form-textarea" id="custWriting" style="min-height:70px" data-i18n-ph="order.writingPh" placeholder="Example: “Happy Birthday, Anna!”"></textarea>
+            <label class="form-label" data-i18n="order.writing">Additional Details</label>
+            <p class="muted-note" style="margin:-0.35rem 0 0.5rem;" data-i18n="order.writingHint">Write the message you'd like on your cake (e.g. “Happy Birthday”), whether you want a gluten-free version, and any allergies (e.g. a nut allergy).</p>
+            <textarea class="form-textarea" id="custWriting" style="min-height:90px" data-i18n-ph="order.writingPh" placeholder="Example: “Happy Birthday, Anna!” · Gluten-free please · Nut allergy"></textarea>
           </div>
 
           <div class="form-group">
@@ -1528,7 +1559,11 @@
         <div class="section-eyebrow-center" data-i18n="reviews.shareEyebrow">Share Your Experience</div>
         <h3 class="section-title-center" style="font-size:1.8rem;" data-i18n="reviews.leaveTitle">Leave a Review</h3>
       </div>
-      <div class="review-form">
+      <div class="login-gate" id="reviewGate" style="display:none;max-width:600px;margin:0 auto;">
+        <span data-i18n="reviews.signInPrompt">Please sign in to leave a review.</span><br>
+        <a onclick="showPage('account')" data-i18n="reviews.signInLink">Sign in or create an account →</a>
+      </div>
+      <div class="review-form" id="reviewFormBox">
         <div class="form-group">
           <label class="form-label" data-i18n="reviews.yourName">Your Name</label>
           <input type="text" class="form-input" data-i18n-ph="reviews.yourNamePh" placeholder="Your name" id="reviewName">
@@ -1771,6 +1806,42 @@
               </div>
             </div>
           </div>
+
+          <!-- Cake Photos manager -->
+          <div class="dash-card" style="margin-top:1.5rem;">
+            <h3 data-i18n="admin.photosTitle">Cake Photos</h3>
+            <p class="muted-note" data-i18n="admin.photosHint">Upload new photos for any cake. The newest photo shows first everywhere. Hide a photo to pull it from the site without deleting it.</p>
+            <div class="dash-grid" style="margin-top:0.75rem;">
+              <div>
+                <div class="form-group">
+                  <label class="form-label" data-i18n="admin.photoCake">Cake</label>
+                  <select class="form-select" id="adminPhotoCake" onchange="renderAdminPhotoList()"></select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" data-i18n="admin.photoFile">Photo</label>
+                  <input type="file" accept="image/*" class="form-input" id="adminPhotoFile" onchange="onAdminPhotoFile(this)">
+                </div>
+                <div id="adminPhotoPreviewWrap" style="display:none;margin-bottom:0.75rem;">
+                  <img id="adminPhotoPreview" class="adminphoto-preview" alt="">
+                </div>
+                <div class="admin-actions">
+                  <button class="btn-approve" id="adminUploadBtn" onclick="adminUploadPhoto()" data-i18n="admin.uploadPhoto">Upload Photo</button>
+                </div>
+                <div id="adminPhotoMsg" class="auth-msg"></div>
+              </div>
+              <div>
+                <h3 style="font-size:1.05rem;" data-i18n="admin.uploadedPhotos">Uploaded photos for this cake</h3>
+                <div id="adminPhotoList" class="adminphoto-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gluten-Free options manager -->
+          <div class="dash-card" style="margin-top:1.5rem;">
+            <h3 data-i18n="admin.glutenFreeTitle">Gluten-Free Options</h3>
+            <p class="muted-note" data-i18n="admin.glutenFreeHint">Turn the gluten-free tag on for any cake that has a gluten-free version. Customers then see the tag and can order the gluten-free version. Off by default.</p>
+            <div id="adminGfList" class="gf-list"></div>
+          </div>
         </div>
       </div>
 
@@ -1833,6 +1904,7 @@
     <div class="var-counter" id="cakeModalVarCounter"></div>
     <div class="cake-modal-body">
       <div class="cake-modal-tag" id="cakeModalTag">Classic</div>
+      <span class="gf-badge" id="cakeModalGfBadge" style="display:none;" data-i18n="cake.glutenFreeBadge">🌾 Gluten-Free Option</span>
       <h2 class="cake-modal-title" id="cakeModalTitle">Cake Name</h2>
       <p class="cake-modal-desc" id="cakeModalDesc">Description here.</p>
       <p class="cake-modal-ingredients"><b data-i18n="modal.ingredients">Ingredients:</b> <span id="cakeModalIngredients"></span></p>
@@ -1858,6 +1930,9 @@
         <span class="cake-detail-label" data-i18n="modal.price">Price</span>
         <div class="cake-modal-price" id="cakeModalPrice">$0</div>
       </div>
+      <label class="gf-choice" id="gfChoiceRow" style="display:none;">
+        <input type="checkbox" id="gfChoice"> <span data-i18n="modal.gfOption">Order the gluten-free version</span>
+      </label>
       <div class="cake-modal-cta">
         <button class="btn-primary" id="addToCartBtn" onclick="addToCartFromModal()" data-i18n="modal.addToCart">Add to Cart</button>
         <button class="btn-secondary" onclick="closeCakeModalDirect()" data-i18n="modal.keepBrowsing">Keep Browsing</button>
@@ -2350,7 +2425,13 @@ const I18N = {
     "order.loginGate":"Please sign in to place an order.", "order.loginLink":"Sign in or create an account →",
     "order.orderDate":"Order / Pickup Date *", "order.fullName":"Full Name *", "order.fullNamePh":"First and last name",
     "order.phone":"Phone *", "order.phonePh":"For order updates", "order.email":"Email *", "order.emailPh":"you@example.com",
-    "order.writing":"Cake Writing", "order.writingPh":"Example: “Happy Birthday, Anna!”",
+    "order.writing":"Additional Details",
+    "order.writingHint":"Write the message you'd like on your cake (e.g. “Happy Birthday”), whether you want a gluten-free version, and any allergies (e.g. a nut allergy).",
+    "order.writingPh":"Example: “Happy Birthday, Anna!” · Gluten-free please · Nut allergy",
+    "cake.glutenFreeBadge":"🌾 Gluten-Free Option", "modal.gfOption":"Order the gluten-free version", "gf.suffix":" (Gluten-Free)",
+    "admin.glutenFreeTitle":"Gluten-Free Options",
+    "admin.glutenFreeHint":"Turn the gluten-free tag on for any cake that has a gluten-free version. Customers then see the tag and can order the gluten-free version. Off by default.",
+    "admin.glutenFreeOn":"On", "admin.glutenFreeOff":"Off",
     "order.payment":"Payment Method *", "order.recommended":"Recommended", "order.popular":"Popular",
     "order.accepted":"Accepted", "order.cash":"Cash", "order.inPerson":"In person",
     "order.placeOrder":"Place Order →",
@@ -2363,6 +2444,7 @@ const I18N = {
     "reviews.yourReview":"Your Review", "reviews.yourReviewPh":"Tell us about your experience…",
     "reviews.submit":"Submit Review →",
     "reviews.moderationNote":"Reviews are read by our family before they appear, so it may take a little while to show up.",
+    "reviews.signInPrompt":"Please sign in to leave a review.", "reviews.signInLink":"Sign in or create an account →",
 
     /* contact */
     "contact.eyebrow":"Get In Touch", "contact.title":"We'd Love to Hear from You",
@@ -2399,6 +2481,12 @@ const I18N = {
     "admin.setPassword":"Set Password", "admin.forceLogout":"Force Sign-Out", "admin.allUsers":"All Accounts",
     "admin.noPending":"No reviews waiting. You're all caught up!", "admin.approve":"Approve", "admin.reject":"Reject",
     "admin.help":"Help", "admin.role":"Role",
+    "admin.photosTitle":"Cake Photos",
+    "admin.photosHint":"Upload new photos for any cake. The newest photo shows first everywhere. Hide a photo to pull it from the site without deleting it.",
+    "admin.photoCake":"Cake", "admin.photoFile":"Photo", "admin.uploadPhoto":"Upload Photo", "admin.uploading":"Uploading…",
+    "admin.photoUploaded":"Photo uploaded — it's now live (newest first).", "admin.choosePhoto":"Please choose a photo to upload.",
+    "admin.uploadedPhotos":"Uploaded photos for this cake", "admin.noPhotos":"No uploaded photos for this cake yet.",
+    "admin.hide":"Hide", "admin.show":"Show",
 
     /* footer */
     "footer.brandText":"A small family-owned authentic bakery striving to provide the most delicious and eye-pleasing cakes and pastries that satisfy your every craving.",
@@ -2508,7 +2596,13 @@ const I18N = {
     "order.loginGate":"Пожалуйста, войдите, чтобы оформить заказ.", "order.loginLink":"Войти или создать аккаунт →",
     "order.orderDate":"Дата заказа / получения *", "order.fullName":"Полное имя *", "order.fullNamePh":"Имя и фамилия",
     "order.phone":"Телефон *", "order.phonePh":"Для уведомлений о заказе", "order.email":"Эл. почта *", "order.emailPh":"you@example.com",
-    "order.writing":"Надпись на торте", "order.writingPh":"Например: «С днём рождения, Анна!»",
+    "order.writing":"Дополнительные детали",
+    "order.writingHint":"Напишите пожелание для надписи на торте (например, «С днём рождения»), нужна ли версия без глютена, и любые аллергии (например, на орехи).",
+    "order.writingPh":"Например: «С днём рождения, Анна!» · Без глютена · Аллергия на орехи",
+    "cake.glutenFreeBadge":"🌾 Есть без глютена", "modal.gfOption":"Заказать версию без глютена", "gf.suffix":" (без глютена)",
+    "admin.glutenFreeTitle":"Опции без глютена",
+    "admin.glutenFreeHint":"Включите тег «без глютена» для тортов, у которых есть такая версия. Клиенты увидят тег и смогут заказать версию без глютена. По умолчанию выключено.",
+    "admin.glutenFreeOn":"Вкл", "admin.glutenFreeOff":"Выкл",
     "order.payment":"Способ оплаты *", "order.recommended":"Рекомендуем", "order.popular":"Популярно",
     "order.accepted":"Принимается", "order.cash":"Наличные", "order.inPerson":"Лично",
     "order.placeOrder":"Оформить заказ →",
@@ -2521,6 +2615,7 @@ const I18N = {
     "reviews.yourReview":"Ваш отзыв", "reviews.yourReviewPh":"Расскажите о ваших впечатлениях…",
     "reviews.submit":"Отправить отзыв →",
     "reviews.moderationNote":"Отзывы просматривает наша семья перед публикацией, поэтому они появляются не сразу.",
+    "reviews.signInPrompt":"Пожалуйста, войдите, чтобы оставить отзыв.", "reviews.signInLink":"Войти или создать аккаунт →",
 
     /* contact */
     "contact.eyebrow":"Свяжитесь с нами", "contact.title":"Будем рады вашему сообщению",
@@ -2557,6 +2652,12 @@ const I18N = {
     "admin.setPassword":"Установить пароль", "admin.forceLogout":"Принудительный выход", "admin.allUsers":"Все аккаунты",
     "admin.noPending":"Отзывов на модерации нет. Всё разобрано!", "admin.approve":"Одобрить", "admin.reject":"Отклонить",
     "admin.help":"Помощь", "admin.role":"Роль",
+    "admin.photosTitle":"Фотографии тортов",
+    "admin.photosHint":"Загружайте новые фото для любого торта. Самое новое фото показывается первым везде. Скройте фото, чтобы убрать его с сайта, не удаляя.",
+    "admin.photoCake":"Торт", "admin.photoFile":"Фото", "admin.uploadPhoto":"Загрузить фото", "admin.uploading":"Загрузка…",
+    "admin.photoUploaded":"Фото загружено — оно уже на сайте (новое первым).", "admin.choosePhoto":"Пожалуйста, выберите фото для загрузки.",
+    "admin.uploadedPhotos":"Загруженные фото этого торта", "admin.noPhotos":"Для этого торта пока нет загруженных фото.",
+    "admin.hide":"Скрыть", "admin.show":"Показать",
 
     /* footer */
     "footer.brandText":"Небольшая семейная домашняя пекарня, которая стремится дарить самые вкусные и красивые торты и десерты, утоляющие любое ваше желание.",
@@ -2619,7 +2720,7 @@ var CONFIG = {
   // ▼▼ PASTE YOUR GOOGLE APPS SCRIPT WEB-APP URL HERE (ends in /exec) ▼▼
   // This connects the GitHub Pages site to the Google backend (orders, accounts,
   // reviews, emails). Leave it "" to run as a local offline demo.
-  WEBAPP_URL: "https://script.google.com/macros/s/AKfycbzH1LkH7WmZv6BA5KY_SgtbYRPhnc0TihvqQ-C5JPpLCQ4QKJ5cmiGXXDcxbFRSSxyJ/exec",
+  WEBAPP_URL: "https://script.google.com/macros/s/AKfycbyZqWthirvpATmeEBMroWIl21iy7Jloqa5C0Q4tFuiAlS-W0PfEeJHGvFlNPBaMfGc7yQ/exec",
   ADMIN_EMAIL: "thesweetmishpuchah@gmail.com",
   PICKUP_ADDRESS: "2404 East 28th Street, Brooklyn, New York, 11235",
   BLOCK_BEFORE_DAYS: 3,
@@ -2781,11 +2882,54 @@ function buildRibbon(){
   applyRibbonPos(); startRibbonAnim(); setupRibbonDrag();
 }
 
+/* =====================  ADMIN-UPLOADED CAKE PHOTOS  =====================
+   Photos uploaded by the admin live on the backend and are merged into each
+   cake here, NEWEST FIRST, so the card + gallery + popup always lead with the
+   most recent image — for every visitor. */
+var CAKE_IMAGES = {};   // { cakeId: [ {id,url,ts}, ... ]  (newest first) }
+function mergeCakeImages(){
+  CAKES.forEach(function(c){
+    if (!c._baseVariations) c._baseVariations = c.variations.slice();   // remember the code photos once
+    var uploaded = (CAKE_IMAGES[c.id] || []).map(function(im){ return { img:im.url, _uploadedId:im.id }; });
+    c.variations = uploaded.concat(c._baseVariations);                  // newest uploads first, then code photos
+    if (c.variations.length) c.img = c.variations[0].img;               // card shows the newest photo
+  });
+}
+function loadCakeImages(){
+  return api('getCakeImages').then(function(res){
+    if (res && res.ok && res.images){
+      CAKE_IMAGES = res.images;
+      mergeCakeImages();
+      renderRibbonCards();
+      if (currentPage === 'gallery') renderGallery();
+      var ov = document.getElementById('cakeModalOverlay');
+      if (ov && ov.classList.contains('open') && modalCake){ buildVarDots(); showVariation(); }
+    }
+  }).catch(function(){});
+}
+
+/* =====================  GLUTEN-FREE FLAGS (admin toggle, shown to everyone)  ===================== */
+var CAKE_GF = {};   // { cakeId: true }  cakes with the gluten-free option turned on
+function applyCakeFlags(){ CAKES.forEach(function(c){ c.glutenFree = !!CAKE_GF[c.id]; }); }
+function loadCakeFlags(){
+  return api('getCakeFlags').then(function(res){
+    if (res && res.ok){
+      CAKE_GF = res.glutenFree || {};
+      applyCakeFlags();
+      renderRibbonCards();
+      if (currentPage === 'gallery') renderGallery();
+      var ov = document.getElementById('cakeModalOverlay');
+      if (ov && ov.classList.contains('open') && modalCake) showVariation();
+    }
+  }).catch(function(){});
+}
+
 /* =====================  CAKE MODAL (with design variations)  ===================== */
 var modalCake = null, modalVarIndex = 0;
 function openCakeModal(id){
   modalCake = CAKES[id]; modalVarIndex = 0;
   if (!modalCake) return;
+  var gcb = document.getElementById('gfChoice'); if (gcb) gcb.checked = false;
   buildVarDots();
   showVariation();
   document.getElementById('cakeModalOverlay').classList.add('open');
@@ -2818,6 +2962,11 @@ function showVariation(){
   var counter = document.getElementById('cakeModalVarCounter');
   counter.textContent = list.length > 1 ? t('modal.design', {n: modalVarIndex+1, total: list.length}) : '';
   document.querySelectorAll('#cakeModalVarDots .modal-var-dot').forEach(function(d,i){ d.classList.toggle('active', i===modalVarIndex); });
+  // gluten-free badge + order option (only when the admin turned it on)
+  var gf = !!modalCake.glutenFree;
+  document.getElementById('cakeModalGfBadge').style.display = gf ? 'inline-block' : 'none';
+  var row = document.getElementById('gfChoiceRow'); row.style.display = gf ? 'flex' : 'none';
+  if (!gf){ var cb = document.getElementById('gfChoice'); if (cb) cb.checked = false; }
 }
 function modalNav(dir){
   var list = modalCake.variations && modalCake.variations.length ? modalCake.variations : [modalCake];
@@ -2826,7 +2975,9 @@ function modalNav(dir){
 }
 function gotoVariation(i){ modalVarIndex = i; showVariation(); }
 function addToCartFromModal(){
-  addToCart(modalCake.id, modalVarIndex);
+  var cb = document.getElementById('gfChoice');
+  var gf = !!(cb && cb.checked && modalCake.glutenFree);
+  addToCart(modalCake.id, modalVarIndex, gf);
   var f = document.getElementById('addedFlash');
   f.textContent = t('modal.added'); f.classList.add('show');
   setTimeout(function(){ f.classList.remove('show'); }, 1400);
@@ -2854,6 +3005,7 @@ function renderGallery(){
   var list = activeFilter==='All' ? CAKES : CAKES.filter(function(c){ return c.category===activeFilter; });
   grid.innerHTML = list.map(function(cake){
     return '<div class="gallery-item" onclick="openCakeModal('+cake.id+')">' +
+      (cake.glutenFree ? '<span class="gallery-gf" title="Gluten-free option available">GF</span>' : '') +
       '<img src="'+cake.img+'" alt="'+esc(L(cake,"name"))+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:block;">' +
       '<div class="gallery-overlay"><div class="gallery-item-name">'+esc(L(cake,"name"))+'</div></div></div>';
   }).join('');
@@ -2863,12 +3015,15 @@ function setFilter(cat){ activeFilter = cat; renderGallery(); }
 /* =====================  CART  ===================== */
 function getCart(){ try { return JSON.parse(localStorage.getItem('sm_cart')||'[]'); } catch(e){ return []; } }
 function setCart(c){ localStorage.setItem('sm_cart', JSON.stringify(c)); updateCartCount(); }
-function addToCart(cakeId, varIndex){
+function addToCart(cakeId, varIndex, gf){
   var cake = CAKES[cakeId]; var v = effVar(cake, varIndex);
   var cart = getCart();
-  var item = { id:v.id, nameEn:(cake.variations&&cake.variations[varIndex]&&cake.variations[varIndex].name)||cake.name,
-               nameRu:(cake.variations&&cake.variations[varIndex]&&cake.variations[varIndex].nameRu)||cake.nameRu,
-               price: parseMoney(v.price), qty:1 };
+  var baseEn = (cake.variations&&cake.variations[varIndex]&&cake.variations[varIndex].name)||cake.name;
+  var baseRu = (cake.variations&&cake.variations[varIndex]&&cake.variations[varIndex].nameRu)||cake.nameRu;
+  var item = { id: gf ? v.id+'-gf' : v.id,
+               nameEn: gf ? baseEn + ' (Gluten-Free)' : baseEn,
+               nameRu: gf ? (baseRu||baseEn) + ' (без глютена)' : baseRu,
+               price: parseMoney(v.price), qty:1, gf: !!gf };
   var idx = cart.findIndex(function(x){ return x.id===item.id; });
   if (idx>=0) cart[idx].qty++; else cart.push(item);
   setCart(cart); renderCart();
@@ -2980,7 +3135,7 @@ function placeOrder(){
     id: orderId, date: date, token: localStorage.getItem('sm_token')||'',
     customer: { name:name, email:email, phone:phone },
     payment: { method: selectedPayment },
-    items: cart.map(function(i){ return { name:i.nameEn, price:i.price, quantity:i.qty }; }),
+    items: cart.map(function(i){ return { name:i.nameEn, price:i.price, quantity:i.qty, gf:!!i.gf }; }),
     total: total, writing: writing, source:'IndexM',
     notes: 'Offline payment via ' + selectedPayment
   };
@@ -3007,11 +3162,28 @@ function placeOrder(){
 
 /* =====================  REVIEWS  ===================== */
 var selectedStars = 0;
+function findCakeByAnyName(name){
+  if (!name) return null;
+  name = String(name).toLowerCase();
+  return CAKES.find(function(c){
+    if (String(c.name).toLowerCase() === name) return true;
+    var vs = (c._baseVariations || c.variations || []);
+    return vs.some(function(v){ return v.name && String(v.name).toLowerCase() === name; });
+  }) || null;
+}
+/* Avatar = a photo of the cake they ordered (newest image), else the emoji. */
+function reviewAvatarHTML(r){
+  if (r && r.orderedCake){
+    var c = findCakeByAnyName(r.orderedCake);
+    if (c && c.img) return '<div class="review-avatar"><img src="'+c.img+'" alt="'+esc(L(c,"name"))+'"></div>';
+  }
+  return '<div class="review-avatar">'+((r && r.emoji)||'🎂')+'</div>';
+}
 function reviewCardHTML(r){
   return '<div class="review-card"><div class="review-quote">"</div>' +
     '<div class="review-stars">'+'★'.repeat(r.stars)+'</div>' +
     '<p class="review-text">'+esc(r.text)+'</p>' +
-    '<div class="review-author"><div class="review-avatar">'+(r.emoji||'🎂')+'</div>' +
+    '<div class="review-author">'+reviewAvatarHTML(r)+
     '<div><div class="review-name">'+esc(r.name)+'</div><div class="review-date">'+esc(r.date||'')+'</div></div></div></div>';
 }
 function renderReviews(){
@@ -3030,8 +3202,21 @@ function renderReviews(){
       document.querySelectorAll('#starSelect .star-btn').forEach(function(b,i){ b.classList.toggle('active', i<selectedStars); });
     };
   });
+  updateReviewGate();
+}
+/* Only signed-in customers can leave a review. */
+function updateReviewGate(){
+  var gate = document.getElementById('reviewGate'), box = document.getElementById('reviewFormBox');
+  if (!gate || !box) return;
+  if (currentUser){
+    gate.style.display = 'none'; box.style.display = '';
+    var nm = document.getElementById('reviewName'); if (nm && !nm.value) nm.value = currentUser.name || '';
+  } else {
+    gate.style.display = 'block'; box.style.display = 'none';
+  }
 }
 function submitReview(){
+  if (!currentUser){ setMsg('reviewStatus', t('reviews.signInPrompt'), 'error'); updateReviewGate(); return; }
   var name = (document.getElementById('reviewName').value||'').trim();
   var text = (document.getElementById('reviewText').value||'').trim();
   if (!name || !text || !selectedStars){ setMsg('reviewStatus', t('rev.fill'), 'error'); return; }
@@ -3092,6 +3277,7 @@ function updateAuthUI(){
   } else {
     authView.style.display='block'; dashView.style.display='none';
   }
+  updateReviewGate();
 }
 function doSignup(){
   var name=(document.getElementById('signupName').value||'').trim();
@@ -3152,7 +3338,7 @@ function loadOrderHistory(){
   api('getOrderHistory', {token: localStorage.getItem('sm_token')||''}).then(function(res){
     if (!res || !res.ok || !res.orders || !res.orders.length){ host.innerHTML='<p class="muted-note">'+esc(t('account.noOrders'))+'</p>'; return; }
     host.innerHTML = res.orders.map(function(o){
-      var items = (o.items||[]).map(function(i){ return esc(i.name)+' ×'+(i.quantity||i.qty||1); }).join(', ');
+      var items = (o.items||[]).map(function(i){ return esc(i.name)+(i.gf?' <span class="gallery-gf" style="position:static;display:inline-block;">GF</span>':'')+' ×'+(i.quantity||i.qty||1); }).join(', ');
       return '<div class="order-hist-item"><div class="ohi-top"><span class="ohi-id">'+esc(o.id)+'</span>' +
         '<span class="ohi-status">'+esc(o.status||'received')+'</span></div>' +
         '<div class="ohi-meta">'+esc(o.date)+' · '+currency(parseMoney(o.total))+'</div>' +
@@ -3185,8 +3371,99 @@ function loadAdmin(){
         '<button class="small-btn" onclick="fillAdminEmail(\''+esc(u.email)+'\')">'+esc(t('admin.help'))+'</button></div>';
     }).join('');
   }).catch(function(){ users.innerHTML='<p class="muted-note">'+esc(t('common.loadError'))+'</p>'; });
+
+  initAdminPhotos();
+  initAdminGF();
 }
 function fillAdminEmail(email){ document.getElementById('adminCustEmail').value=email; }
+
+/* ---- Admin gluten-free toggles (one per cake) ---- */
+function initAdminGF(){
+  var host = document.getElementById('adminGfList'); if (!host) return;
+  host.innerHTML = CAKES.map(function(c){
+    var on = !!c.glutenFree;
+    return '<div class="gf-row"><span>'+esc(L(c,'name'))+'</span>'+
+      '<button class="gf-toggle'+(on?' on':'')+'" onclick="toggleCakeGF('+c.id+','+(!on)+')">'+
+      esc(on ? t('admin.glutenFreeOn') : t('admin.glutenFreeOff'))+'</button></div>';
+  }).join('');
+}
+function toggleCakeGF(cakeId, on){
+  api('adminSetCakeFlag', { token: localStorage.getItem('sm_token')||'', cakeId:cakeId, glutenFree:on })
+    .then(function(res){ if (res && res.ok){ loadCakeFlags().then(initAdminGF); } }).catch(function(){});
+}
+
+/* ---- Admin cake-photo manager ---- */
+var ADMIN_IMAGES = {};            // {cakeId:[{id,url,hidden,ts}]}  (includes hidden)
+var pendingPhotoDataUrl = null;   // the downscaled image waiting to be uploaded
+function initAdminPhotos(){
+  var sel = document.getElementById('adminPhotoCake'); if (!sel) return;
+  sel.innerHTML = CAKES.map(function(c){ return '<option value="'+c.id+'">'+esc(L(c,'name'))+'</option>'; }).join('');
+  loadAdminImages(renderAdminPhotoList);
+}
+function adminPhotoCakeId(){ return parseInt(document.getElementById('adminPhotoCake').value,10); }
+function onAdminPhotoFile(input){
+  var file = input.files && input.files[0]; if (!file) return;
+  setMsg('adminPhotoMsg','','');
+  downscaleImage(file, function(dataUrl){
+    pendingPhotoDataUrl = dataUrl;
+    document.getElementById('adminPhotoPreview').src = dataUrl;
+    document.getElementById('adminPhotoPreviewWrap').style.display = 'block';
+  });
+}
+/* Shrink big phone photos before upload so they store + load fast. */
+function downscaleImage(file, cb){
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var max = 1280, w = img.width, h = img.height;
+      if (w > max || h > max){ var s = Math.min(max/w, max/h); w = Math.round(w*s); h = Math.round(h*s); }
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      try { cb(cv.toDataURL('image/jpeg', 0.85)); } catch (err){ cb(e.target.result); }
+    };
+    img.onerror = function(){ cb(e.target.result); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function adminUploadPhoto(){
+  if (pendingPhotoDataUrl == null){ setMsg('adminPhotoMsg', t('admin.choosePhoto'), 'error'); return; }
+  var btn = document.getElementById('adminUploadBtn'); btn.disabled = true;
+  setMsg('adminPhotoMsg', t('admin.uploading'), 'muted');
+  api('adminUploadCakeImage', { token: localStorage.getItem('sm_token')||'', cakeId: adminPhotoCakeId(), dataUrl: pendingPhotoDataUrl })
+    .then(function(res){
+      btn.disabled = false;
+      if (res && res.ok){
+        setMsg('adminPhotoMsg', t('admin.photoUploaded'), 'success');
+        pendingPhotoDataUrl = null;
+        document.getElementById('adminPhotoFile').value = '';
+        document.getElementById('adminPhotoPreviewWrap').style.display = 'none';
+        loadAdminImages(renderAdminPhotoList);
+        loadCakeImages();                 // refresh the whole site with the new photo
+      } else setMsg('adminPhotoMsg', (res&&res.error)||t('common.loadError'), 'error');
+    }).catch(function(){ btn.disabled = false; setMsg('adminPhotoMsg', t('common.loadError'), 'error'); });
+}
+function loadAdminImages(cb){
+  api('adminListCakeImages', { token: localStorage.getItem('sm_token')||'' }).then(function(res){
+    if (res && res.ok) ADMIN_IMAGES = res.images || {};
+    cb && cb();
+  }).catch(function(){ cb && cb(); });
+}
+function renderAdminPhotoList(){
+  var host = document.getElementById('adminPhotoList'); if (!host) return;
+  var list = ADMIN_IMAGES[adminPhotoCakeId()] || [];
+  if (!list.length){ host.innerHTML = '<div class="adminphoto-empty">'+esc(t('admin.noPhotos'))+'</div>'; return; }
+  host.innerHTML = list.map(function(im){
+    return '<div class="adminphoto'+(im.hidden?' is-hidden':'')+'"><img src="'+im.url+'" alt="">' +
+      '<button class="ap-toggle" onclick="toggleAdminPhoto(\''+im.id+'\','+(!im.hidden)+')">'+
+      esc(im.hidden ? t('admin.show') : t('admin.hide'))+'</button></div>';
+  }).join('');
+}
+function toggleAdminPhoto(id, hide){
+  api('adminToggleCakeImage', { token: localStorage.getItem('sm_token')||'', id:id, hidden:hide })
+    .then(function(){ loadAdminImages(renderAdminPhotoList); loadCakeImages(); }).catch(function(){});
+}
 function moderate(id, action){
   api('moderateReview', {token: localStorage.getItem('sm_token')||'', id:id, action:action}).then(function(res){
     loadAdmin(); if (action==='approve') renderReviews();
@@ -3251,6 +3528,8 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('cakeModalOverlay').classList.remove('open');
   initStaticListeners();
   buildRibbon();
+  loadCakeImages();
+  loadCakeFlags();
   generateSparkles();
   applyI18n();
   updateCartCount();
@@ -3297,10 +3576,26 @@ var Mock = (function(){
     adminForceLogout:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
       var u=findUser(p.email); if(!u) return {ok:false,error:'No account.'}; u.token='';
       set('sm_users', get('sm_users').map(function(x){return x.email===u.email?u:x;})); return {ok:true,message:'Signed out '+p.email+'.'}; },
-    submitReview:function(p){ var revs=get('sm_reviews'); var u=userByToken(p.token);
-      revs.push({id:'REV-'+Date.now(),name:p.name,email:(u&&u.email)||'',stars:p.stars,text:p.text,status:'pending',date:new Date().toISOString().slice(0,10)});
+    submitReview:function(p){ var u=userByToken(p.token); if(!u) return {ok:false,error:'Please sign in to leave a review.'};
+      var revs=get('sm_reviews'); revs.push({id:'REV-'+Date.now(),name:p.name||u.name,email:u.email,stars:p.stars,text:p.text,status:'pending',date:new Date().toISOString().slice(0,10)});
       set('sm_reviews',revs); return {ok:true}; },
-    getApprovedReviews:function(){ return {ok:true,reviews:get('sm_reviews').filter(function(r){return r.status==='approved';}).reverse()}; },
+    getApprovedReviews:function(){ var by={}; get('sm_orders').forEach(function(o){ var f=(o.items&&o.items[0]&&o.items[0].name)||''; if(!f) return;
+        [o.account,(o.customer&&o.customer.email)].forEach(function(em){ em=String(em||'').toLowerCase(); if(em) by[em]=f; }); });
+      return {ok:true,reviews:get('sm_reviews').filter(function(r){return r.status==='approved';})
+        .map(function(r){ return Object.assign({},r,{orderedCake: by[String(r.email||'').toLowerCase()]||''}); }).reverse()}; },
+    adminUploadCakeImage:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
+      if(p.cakeId===undefined||p.cakeId===null||p.cakeId==='') return {ok:false,error:'Please choose a cake.'};
+      if(!p.dataUrl) return {ok:false,error:'No image was provided.'};
+      var imgs=get('sm_images'); var rec={id:'IMG-'+Date.now()+'-'+Math.floor(Math.random()*1000),cakeId:p.cakeId,url:p.dataUrl,hidden:false,ts:Date.now()};
+      imgs.push(rec); set('sm_images',imgs); return {ok:true,image:rec}; },
+    getCakeImages:function(){ var map={}; get('sm_images').slice().sort(function(a,b){return b.ts-a.ts;}).forEach(function(im){ if(im.hidden) return; (map[im.cakeId]=map[im.cakeId]||[]).push({id:im.id,url:im.url,ts:im.ts}); }); return {ok:true,images:map}; },
+    adminListCakeImages:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.',images:{}};
+      var map={}; get('sm_images').slice().sort(function(a,b){return b.ts-a.ts;}).forEach(function(im){ (map[im.cakeId]=map[im.cakeId]||[]).push({id:im.id,url:im.url,hidden:!!im.hidden,ts:im.ts}); }); return {ok:true,images:map}; },
+    adminToggleCakeImage:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
+      var imgs=get('sm_images'),found=false; imgs.forEach(function(im){ if(im.id===p.id){ im.hidden=(p.hidden===undefined)?!im.hidden:!!p.hidden; found=true; } }); set('sm_images',imgs); return found?{ok:true}:{ok:false,error:'Photo not found.'}; },
+    getCakeFlags:function(){ var gf; try{gf=JSON.parse(localStorage.getItem('sm_gf')||'{}');}catch(e){gf={};} var m={}; Object.keys(gf).forEach(function(k){ if(gf[k]) m[k]=true; }); return {ok:true,glutenFree:m}; },
+    adminSetCakeFlag:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
+      var gf; try{gf=JSON.parse(localStorage.getItem('sm_gf')||'{}');}catch(e){gf={};} gf[p.cakeId]=!!p.glutenFree; localStorage.setItem('sm_gf',JSON.stringify(gf)); return {ok:true,glutenFree:!!p.glutenFree}; },
     getPendingReviews:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.',reviews:[]};
       return {ok:true,reviews:get('sm_reviews').filter(function(r){return r.status==='pending';}).reverse()}; },
     moderateReview:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
