@@ -1230,6 +1230,15 @@
     font-family:'DM Sans',sans-serif; font-size:0.66rem; letter-spacing:0.05em; text-transform:uppercase; padding:0.3rem 0.85rem; color:var(--charcoal-mid); transition:all 0.18s; }
   .gf-toggle.on { background:#3f7d3a; color:#fff; border-color:#3f7d3a; }
   .gf-list { max-height:360px; overflow:auto; margin-top:0.5rem; padding-right:0.3rem; }
+  .cake-thumb { position:relative; }
+  .ribbon-gf { position:absolute; top:8px; left:8px; z-index:2; font-size:0.56rem; font-weight:700; letter-spacing:0.05em;
+    color:#fff; background:rgba(63,125,58,0.95); border-radius:999px; padding:0.12rem 0.45rem; }
+  .addcake-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+  @media (max-width:560px){ .addcake-grid { grid-template-columns:1fr; } }
+  .manage-row { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.45rem 0; border-bottom:1px solid rgba(42,33,24,0.07); font-size:0.88rem; }
+  .manage-row.is-hidden .mr-name { opacity:0.5; text-decoration:line-through; }
+  .mr-actions { display:flex; gap:0.3rem; flex-shrink:0; }
+  .small-btn.danger { color:#c0392b; border-color:rgba(192,57,43,0.4); }
 
   /* Review avatar can now hold a photo of the cake they ordered */
   .review-avatar { overflow: hidden; }
@@ -1842,6 +1851,41 @@
             <p class="muted-note" data-i18n="admin.glutenFreeHint">Turn the gluten-free tag on for any cake that has a gluten-free version. Customers then see the tag and can order the gluten-free version. Off by default.</p>
             <div id="adminGfList" class="gf-list"></div>
           </div>
+
+          <!-- Add / manage cakes -->
+          <div class="dash-card" style="margin-top:1.5rem;">
+            <h3 data-i18n="admin.manageTitle">Add / Manage Cakes</h3>
+            <p class="muted-note" data-i18n="admin.manageHint">Create a brand-new cake, hide any cake, or change the order they appear in the ribbon and gallery. Changes show for everyone.</p>
+
+            <h3 style="font-size:1.05rem;margin-top:1rem;" data-i18n="admin.addCakeTitle">Add a new cake</h3>
+            <div class="addcake-grid">
+              <input type="text" class="form-input" id="acName" data-i18n-ph="admin.acName" placeholder="Name *">
+              <input type="text" class="form-input" id="acNameRu" data-i18n-ph="admin.acNameRu" placeholder="Name (Russian)">
+              <input type="text" class="form-input" id="acCategory" data-i18n-ph="admin.acCategory" placeholder="Category (e.g. Cheesecake)">
+              <input type="text" class="form-input" id="acPrice" data-i18n-ph="admin.acPrice" placeholder="Price (e.g. $100)">
+              <input type="text" class="form-input" id="acTag" data-i18n-ph="admin.acTag" placeholder="Tag (e.g. New)">
+              <input type="text" class="form-input" id="acTagRu" data-i18n-ph="admin.acTagRu" placeholder="Tag (Russian)">
+              <input type="text" class="form-input" id="acSize" data-i18n-ph="admin.acSize" placeholder="Size (e.g. 10 inches.)">
+              <input type="text" class="form-input" id="acSizeRu" data-i18n-ph="admin.acSizeRu" placeholder="Size (Russian)">
+              <input type="text" class="form-input" id="acServes" data-i18n-ph="admin.acServes" placeholder="Serves (e.g. 10-15 people.)">
+              <input type="text" class="form-input" id="acServesRu" data-i18n-ph="admin.acServesRu" placeholder="Serves (Russian)">
+            </div>
+            <textarea class="form-textarea" id="acDesc" style="margin-top:0.6rem" data-i18n-ph="admin.acDesc" placeholder="Description"></textarea>
+            <textarea class="form-textarea" id="acDescRu" style="margin-top:0.6rem" data-i18n-ph="admin.acDescRu" placeholder="Description (Russian)"></textarea>
+            <input type="text" class="form-input" id="acIngr" style="margin-top:0.6rem" data-i18n-ph="admin.acIngr" placeholder="Ingredients">
+            <input type="text" class="form-input" id="acIngrRu" style="margin-top:0.6rem" data-i18n-ph="admin.acIngrRu" placeholder="Ingredients (Russian)">
+            <div class="form-group" style="margin-top:0.6rem;">
+              <label class="form-label" data-i18n="admin.acPhoto">Photo</label>
+              <input type="file" accept="image/*" class="form-input" id="acPhotoFile" onchange="onNewCakePhoto(this)">
+            </div>
+            <div id="acPreviewWrap" style="display:none;margin-bottom:0.6rem;"><img id="acPreview" class="adminphoto-preview" alt=""></div>
+            <div class="admin-actions"><button class="btn-approve" id="acCreateBtn" onclick="adminCreateCake()" data-i18n="admin.createCake">Create Cake</button></div>
+            <div id="acMsg" class="auth-msg"></div>
+
+            <h3 style="font-size:1.05rem;margin-top:1.5rem;" data-i18n="admin.reorderTitle">Order &amp; visibility</h3>
+            <p class="muted-note" data-i18n="admin.reorderHint">Use ▲▼ to reorder. Hide removes a cake from the site (built-ins can't be deleted). Order applies to the ribbon and gallery.</p>
+            <div id="adminManageList" class="gf-list"></div>
+          </div>
         </div>
       </div>
 
@@ -2432,6 +2476,20 @@ const I18N = {
     "admin.glutenFreeTitle":"Gluten-Free Options",
     "admin.glutenFreeHint":"Turn the gluten-free tag on for any cake that has a gluten-free version. Customers then see the tag and can order the gluten-free version. Off by default.",
     "admin.glutenFreeOn":"On", "admin.glutenFreeOff":"Off",
+    "admin.manageTitle":"Add / Manage Cakes",
+    "admin.manageHint":"Create a brand-new cake, hide any cake, or change the order they appear in the ribbon and gallery. Changes show for everyone.",
+    "admin.addCakeTitle":"Add a new cake",
+    "admin.acName":"Name *", "admin.acNameRu":"Name (Russian)", "admin.acCategory":"Category (e.g. Cheesecake)",
+    "admin.acPrice":"Price (e.g. $100)", "admin.acTag":"Tag (e.g. New)", "admin.acTagRu":"Tag (Russian)",
+    "admin.acSize":"Size (e.g. 10 inches.)", "admin.acSizeRu":"Size (Russian)",
+    "admin.acServes":"Serves (e.g. 10-15 people.)", "admin.acServesRu":"Serves (Russian)",
+    "admin.acDesc":"Description", "admin.acDescRu":"Description (Russian)",
+    "admin.acIngr":"Ingredients", "admin.acIngrRu":"Ingredients (Russian)", "admin.acPhoto":"Photo",
+    "admin.createCake":"Create Cake", "admin.creating":"Creating…", "admin.cakeCreated":"Cake created — it's live now.",
+    "admin.cakeNameReq":"Please enter at least a cake name.",
+    "admin.reorderTitle":"Order & visibility",
+    "admin.reorderHint":"Use the arrows to reorder. Hide removes a cake from the site (built-ins can't be deleted). Order applies to the ribbon and gallery.",
+    "admin.delete":"Delete", "admin.deleteConfirm":"Delete this added cake? This cannot be undone.",
     "order.payment":"Payment Method *", "order.recommended":"Recommended", "order.popular":"Popular",
     "order.accepted":"Accepted", "order.cash":"Cash", "order.inPerson":"In person",
     "order.placeOrder":"Place Order →",
@@ -2603,6 +2661,20 @@ const I18N = {
     "admin.glutenFreeTitle":"Опции без глютена",
     "admin.glutenFreeHint":"Включите тег «без глютена» для тортов, у которых есть такая версия. Клиенты увидят тег и смогут заказать версию без глютена. По умолчанию выключено.",
     "admin.glutenFreeOn":"Вкл", "admin.glutenFreeOff":"Выкл",
+    "admin.manageTitle":"Добавить / управлять тортами",
+    "admin.manageHint":"Создайте новый торт, скройте любой торт или измените порядок их показа в ленте и галерее. Изменения видят все.",
+    "admin.addCakeTitle":"Добавить новый торт",
+    "admin.acName":"Название *", "admin.acNameRu":"Название (рус.)", "admin.acCategory":"Категория (напр. Чизкейк)",
+    "admin.acPrice":"Цена (напр. $100)", "admin.acTag":"Тег (напр. Новинка)", "admin.acTagRu":"Тег (рус.)",
+    "admin.acSize":"Размер (напр. 10 дюймов.)", "admin.acSizeRu":"Размер (рус.)",
+    "admin.acServes":"Порций (напр. 10-15 человек.)", "admin.acServesRu":"Порций (рус.)",
+    "admin.acDesc":"Описание", "admin.acDescRu":"Описание (рус.)",
+    "admin.acIngr":"Состав", "admin.acIngrRu":"Состав (рус.)", "admin.acPhoto":"Фото",
+    "admin.createCake":"Создать торт", "admin.creating":"Создаём…", "admin.cakeCreated":"Торт создан — он уже на сайте.",
+    "admin.cakeNameReq":"Введите хотя бы название торта.",
+    "admin.reorderTitle":"Порядок и видимость",
+    "admin.reorderHint":"Используйте стрелки для изменения порядка. «Скрыть» убирает торт с сайта (встроенные нельзя удалить). Порядок применяется к ленте и галерее.",
+    "admin.delete":"Удалить", "admin.deleteConfirm":"Удалить этот добавленный торт? Это нельзя отменить.",
     "order.payment":"Способ оплаты *", "order.recommended":"Рекомендуем", "order.popular":"Популярно",
     "order.accepted":"Принимается", "order.cash":"Наличные", "order.inPerson":"Лично",
     "order.placeOrder":"Оформить заказ →",
@@ -2720,7 +2792,7 @@ var CONFIG = {
   // ▼▼ PASTE YOUR GOOGLE APPS SCRIPT WEB-APP URL HERE (ends in /exec) ▼▼
   // This connects the GitHub Pages site to the Google backend (orders, accounts,
   // reviews, emails). Leave it "" to run as a local offline demo.
-  WEBAPP_URL: "https://script.google.com/macros/s/AKfycbyZqWthirvpATmeEBMroWIl21iy7Jloqa5C0Q4tFuiAlS-W0PfEeJHGvFlNPBaMfGc7yQ/exec",
+  WEBAPP_URL: "https://script.google.com/macros/s/AKfycbwXkenaFu23nMO73uWUWghJjtmJI4WN8mGCsTa-6tXqM2uaNWHJQVqwskGPhG8VV9z6/exec",
   ADMIN_EMAIL: "thesweetmishpuchah@gmail.com",
   PICKUP_ADDRESS: "2404 East 28th Street, Brooklyn, New York, 11235",
   BLOCK_BEFORE_DAYS: 3,
@@ -2833,21 +2905,23 @@ var CARD_WIDTH = 220, RIBBON_SPEED = 0.6;
 
 function ribbonCardHTML(cake){
   return '<div class="cake-card" onclick="openCakeModal('+cake.id+')">' +
-    '<div class="cake-thumb"><img src="'+cake.img+'" alt="'+esc(L(cake,"name"))+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"><div class="cake-thumb-overlay"></div></div>' +
+    '<div class="cake-thumb">'+(cake.glutenFree?'<span class="ribbon-gf" title="Gluten-free option available">GF</span>':'')+'<img src="'+cake.img+'" alt="'+esc(L(cake,"name"))+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"><div class="cake-thumb-overlay"></div></div>' +
     '<div class="cake-card-body"><div class="cake-name">'+esc(L(cake,"name"))+'</div>' +
     '<div class="cake-desc-short">'+esc(L(cake,"tag"))+'</div>' +
     '<div class="cake-view-btn">'+esc(t("ribbon.viewDetails"))+
     ' <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div></div></div>';
 }
+function visibleCakes(){ return CAKES.filter(function(c){ return !c.hidden; }); }
 function renderRibbonCards(){
   var track = document.getElementById('ribbonTrack');
   if (!track) return;
-  var all = CAKES.concat(CAKES, CAKES);
+  var vis = visibleCakes();
+  var all = vis.concat(vis, vis);
   track.innerHTML = all.map(ribbonCardHTML).join('');
 }
 function applyRibbonPos(){
   var track = document.getElementById('ribbonTrack'); if (!track) return;
-  var totalW = CAKES.length * CARD_WIDTH;
+  var totalW = RIBBON_COUNT * CARD_WIDTH;
   if (ribbonPos >= totalW*2) ribbonPos -= totalW;
   if (ribbonPos < totalW) ribbonPos += totalW;
   track.style.transform = 'translateX(-'+ribbonPos+'px)';
@@ -2877,57 +2951,78 @@ function setupRibbonDrag(){
   track.addEventListener('touchend', up);
 }
 function buildRibbon(){
+  RIBBON_COUNT = visibleCakes().length || 1;
   renderRibbonCards();
-  ribbonPos = CAKES.length * CARD_WIDTH;
+  ribbonPos = RIBBON_COUNT * CARD_WIDTH;
   applyRibbonPos(); startRibbonAnim(); setupRibbonDrag();
 }
 
-/* =====================  ADMIN-UPLOADED CAKE PHOTOS  =====================
-   Photos uploaded by the admin live on the backend and are merged into each
-   cake here, NEWEST FIRST, so the card + gallery + popup always lead with the
-   most recent image — for every visitor. */
-var CAKE_IMAGES = {};   // { cakeId: [ {id,url,ts}, ... ]  (newest first) }
+/* =====================  LIVE CAKE CATALOG  =====================
+   The built-in CAKES list is augmented at runtime with admin changes saved on
+   the backend: uploaded photos (newest-first), gluten-free flags, admin-ADDED
+   cakes, HIDDEN cakes, and a custom display ORDER. Every visitor sees the same. */
+var CODE_CAKES  = CAKES.slice();        // snapshot of the built-in cakes (once)
+var RIBBON_COUNT = CAKES.length;
+var CAKE_IMAGES = {};                   // { cakeId: [ {id,url,ts} ] }  newest first
+var CAKE_GF     = {};                   // { cakeId: true }  gluten-free option on
+var CAKE_MANAGE = { added:[], hidden:{}, order:[] };
+
+function applyCakeFlags(){ CAKES.forEach(function(c){ c.glutenFree = !!CAKE_GF[c.id]; }); }
 function mergeCakeImages(){
   CAKES.forEach(function(c){
-    if (!c._baseVariations) c._baseVariations = c.variations.slice();   // remember the code photos once
+    if (!c._baseVariations) c._baseVariations = (c.variations||[]).slice();  // remember code photos once
     var uploaded = (CAKE_IMAGES[c.id] || []).map(function(im){ return { img:im.url, _uploadedId:im.id }; });
-    c.variations = uploaded.concat(c._baseVariations);                  // newest uploads first, then code photos
-    if (c.variations.length) c.img = c.variations[0].img;               // card shows the newest photo
+    c.variations = uploaded.concat(c._baseVariations);                       // newest uploads first
+    if (c.variations.length) c.img = c.variations[0].img;                    // card shows newest photo
   });
+}
+/* Rebuild the working list: built-ins + admin-added, hidden flags, custom order. */
+function rebuildCakes(){
+  CAKES.length = 0;
+  CODE_CAKES.forEach(function(c){ CAKES.push(c); });
+  (CAKE_MANAGE.added||[]).forEach(function(c){ if(!CAKES.some(function(x){return x.id===c.id;})) CAKES.push(c); });
+  var natural = {}; CAKES.forEach(function(c,i){ natural[c.id]=i; });
+  var ord = CAKE_MANAGE.order || [];
+  CAKES.sort(function(a,b){
+    var ia=ord.indexOf(a.id), ib=ord.indexOf(b.id);
+    var sa = ia>=0 ? ia : (100000 + natural[a.id]);
+    var sb = ib>=0 ? ib : (100000 + natural[b.id]);
+    return sa - sb;
+  });
+  CAKES.forEach(function(c){ c.hidden = !!CAKE_MANAGE.hidden[c.id]; });
+  applyAndRender();
+}
+/* Re-apply photos + flags, then refresh everything customers see. */
+function applyAndRender(){
+  mergeCakeImages();
+  applyCakeFlags();
+  var n = visibleCakes().length || 1;
+  if (n !== RIBBON_COUNT){ RIBBON_COUNT = n; ribbonPos = RIBBON_COUNT * CARD_WIDTH; }
+  renderRibbonCards();
+  if (currentPage === 'gallery') renderGallery();
+  var ov = document.getElementById('cakeModalOverlay');
+  if (ov && ov.classList.contains('open') && modalCake){ buildVarDots(); showVariation(); }
+}
+function loadCakeCatalog(){
+  return api('getCakeCatalog').then(function(res){
+    if (res && res.ok){ CAKE_MANAGE = { added:res.added||[], hidden:res.hidden||{}, order:res.order||[] }; rebuildCakes(); }
+  }).catch(function(){});
 }
 function loadCakeImages(){
   return api('getCakeImages').then(function(res){
-    if (res && res.ok && res.images){
-      CAKE_IMAGES = res.images;
-      mergeCakeImages();
-      renderRibbonCards();
-      if (currentPage === 'gallery') renderGallery();
-      var ov = document.getElementById('cakeModalOverlay');
-      if (ov && ov.classList.contains('open') && modalCake){ buildVarDots(); showVariation(); }
-    }
+    if (res && res.ok && res.images){ CAKE_IMAGES = res.images; applyAndRender(); }
   }).catch(function(){});
 }
-
-/* =====================  GLUTEN-FREE FLAGS (admin toggle, shown to everyone)  ===================== */
-var CAKE_GF = {};   // { cakeId: true }  cakes with the gluten-free option turned on
-function applyCakeFlags(){ CAKES.forEach(function(c){ c.glutenFree = !!CAKE_GF[c.id]; }); }
 function loadCakeFlags(){
   return api('getCakeFlags').then(function(res){
-    if (res && res.ok){
-      CAKE_GF = res.glutenFree || {};
-      applyCakeFlags();
-      renderRibbonCards();
-      if (currentPage === 'gallery') renderGallery();
-      var ov = document.getElementById('cakeModalOverlay');
-      if (ov && ov.classList.contains('open') && modalCake) showVariation();
-    }
+    if (res && res.ok){ CAKE_GF = res.glutenFree || {}; applyAndRender(); }
   }).catch(function(){});
 }
 
 /* =====================  CAKE MODAL (with design variations)  ===================== */
 var modalCake = null, modalVarIndex = 0;
 function openCakeModal(id){
-  modalCake = CAKES[id]; modalVarIndex = 0;
+  modalCake = CAKES.find(function(c){ return c.id === id; }); modalVarIndex = 0;
   if (!modalCake) return;
   var gcb = document.getElementById('gfChoice'); if (gcb) gcb.checked = false;
   buildVarDots();
@@ -2956,7 +3051,7 @@ function showVariation(){
   document.getElementById('cakeModalSizeRow').style.display = sizeVal ? '' : 'none';
   document.getElementById('cakeModalSize').textContent = sizeVal || '—';
   document.getElementById('cakeModalServes').textContent = L(v,'serves') || '—';
-  document.getElementById('cakeModalCat').textContent = t('cat.'+modalCake.category);
+  document.getElementById('cakeModalCat').textContent = catLabel(modalCake.category);
   document.getElementById('cakeModalPrice').textContent = v.price;
   document.getElementById('addToCartBtn').textContent = t('modal.addToCart');
   var counter = document.getElementById('cakeModalVarCounter');
@@ -2996,13 +3091,17 @@ document.addEventListener('keydown', function(e){
 
 /* =====================  GALLERY  ===================== */
 var activeFilter = 'All';
-function categories(){ var set=['All']; CAKES.forEach(function(c){ if(set.indexOf(c.category)<0) set.push(c.category); }); return set; }
+function catLabel(cat){ var k='cat.'+cat, s=t(k); return s===k ? cat : s; }   /* fall back to raw name for new categories */
+function categories(){ var set=['All']; visibleCakes().forEach(function(c){ if(set.indexOf(c.category)<0) set.push(c.category); }); return set; }
 function renderGallery(){
   var bar = document.getElementById('galleryFilter'), grid = document.getElementById('galleryGrid');
-  bar.innerHTML = categories().map(function(cat){
-    return '<button class="filter-btn'+(cat===activeFilter?' active':'')+'" onclick="setFilter(\''+cat+'\')">'+esc(t('cat.'+cat))+'</button>';
+  var cats = categories();
+  if (cats.indexOf(activeFilter) < 0) activeFilter = 'All';
+  bar.innerHTML = cats.map(function(cat){
+    return '<button class="filter-btn'+(cat===activeFilter?' active':'')+'" onclick="setFilter(\''+cat+'\')">'+esc(catLabel(cat))+'</button>';
   }).join('');
-  var list = activeFilter==='All' ? CAKES : CAKES.filter(function(c){ return c.category===activeFilter; });
+  var vis = visibleCakes();
+  var list = activeFilter==='All' ? vis : vis.filter(function(c){ return c.category===activeFilter; });
   grid.innerHTML = list.map(function(cake){
     return '<div class="gallery-item" onclick="openCakeModal('+cake.id+')">' +
       (cake.glutenFree ? '<span class="gallery-gf" title="Gluten-free option available">GF</span>' : '') +
@@ -3016,7 +3115,7 @@ function setFilter(cat){ activeFilter = cat; renderGallery(); }
 function getCart(){ try { return JSON.parse(localStorage.getItem('sm_cart')||'[]'); } catch(e){ return []; } }
 function setCart(c){ localStorage.setItem('sm_cart', JSON.stringify(c)); updateCartCount(); }
 function addToCart(cakeId, varIndex, gf){
-  var cake = CAKES[cakeId]; var v = effVar(cake, varIndex);
+  var cake = CAKES.find(function(c){ return c.id === cakeId; }); var v = effVar(cake, varIndex);
   var cart = getCart();
   var baseEn = (cake.variations&&cake.variations[varIndex]&&cake.variations[varIndex].name)||cake.name;
   var baseRu = (cake.variations&&cake.variations[varIndex]&&cake.variations[varIndex].nameRu)||cake.nameRu;
@@ -3374,6 +3473,7 @@ function loadAdmin(){
 
   initAdminPhotos();
   initAdminGF();
+  initAdminManage();
 }
 function fillAdminEmail(email){ document.getElementById('adminCustEmail').value=email; }
 
@@ -3390,6 +3490,69 @@ function initAdminGF(){
 function toggleCakeGF(cakeId, on){
   api('adminSetCakeFlag', { token: localStorage.getItem('sm_token')||'', cakeId:cakeId, glutenFree:on })
     .then(function(res){ if (res && res.ok){ loadCakeFlags().then(initAdminGF); } }).catch(function(){});
+}
+
+/* ---- Admin: add / reorder / hide cakes ---- */
+var pendingNewCakePhoto = null;
+function acVal(id){ var el=document.getElementById(id); return el ? (el.value||'').trim() : ''; }
+function onNewCakePhoto(input){
+  var file = input.files && input.files[0]; if (!file) return;
+  downscaleImage(file, function(dataUrl){
+    pendingNewCakePhoto = dataUrl;
+    document.getElementById('acPreview').src = dataUrl;
+    document.getElementById('acPreviewWrap').style.display = 'block';
+  });
+}
+function adminCreateCake(){
+  var cake = {
+    name:acVal('acName'), nameRu:acVal('acNameRu'), category:acVal('acCategory')||'Specialty',
+    tag:acVal('acTag'), tagRu:acVal('acTagRu'), price:acVal('acPrice'),
+    size:acVal('acSize'), sizeRu:acVal('acSizeRu'), serves:acVal('acServes'), servesRu:acVal('acServesRu'),
+    desc:acVal('acDesc'), descRu:acVal('acDescRu'), ingr:acVal('acIngr'), ingrRu:acVal('acIngrRu')
+  };
+  if (!cake.name){ setMsg('acMsg', t('admin.cakeNameReq'), 'error'); return; }
+  var btn=document.getElementById('acCreateBtn'); btn.disabled=true;
+  setMsg('acMsg', t('admin.creating'), 'muted');
+  api('adminAddCake', { token: localStorage.getItem('sm_token')||'', cake:cake, dataUrl: pendingNewCakePhoto })
+    .then(function(res){
+      btn.disabled=false;
+      if (res && res.ok){
+        setMsg('acMsg', t('admin.cakeCreated'), 'success');
+        ['acName','acNameRu','acCategory','acPrice','acTag','acTagRu','acSize','acSizeRu','acServes','acServesRu','acDesc','acDescRu','acIngr','acIngrRu'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+        pendingNewCakePhoto=null; var pf=document.getElementById('acPhotoFile'); if(pf) pf.value=''; document.getElementById('acPreviewWrap').style.display='none';
+        loadCakeCatalog().then(function(){ initAdminManage(); initAdminGF(); initAdminPhotos(); });
+      } else setMsg('acMsg', (res&&res.error)||t('common.loadError'), 'error');
+    }).catch(function(){ btn.disabled=false; setMsg('acMsg', t('common.loadError'), 'error'); });
+}
+function initAdminManage(){
+  var host=document.getElementById('adminManageList'); if(!host) return;
+  host.innerHTML = CAKES.map(function(c){
+    var added = c.id >= 1000;
+    return '<div class="manage-row'+(c.hidden?' is-hidden':'')+'"><span class="mr-name">'+esc(L(c,'name'))+'</span>'+
+      '<span class="mr-actions">'+
+        '<button class="small-btn" title="Up" onclick="moveCake('+c.id+',-1)">▲</button>'+
+        '<button class="small-btn" title="Down" onclick="moveCake('+c.id+',1)">▼</button>'+
+        '<button class="small-btn" onclick="toggleHideCake('+c.id+','+(!c.hidden)+')">'+esc(c.hidden?t('admin.show'):t('admin.hide'))+'</button>'+
+        (added?'<button class="small-btn danger" onclick="deleteAddedCake('+c.id+')">'+esc(t('admin.delete'))+'</button>':'')+
+      '</span></div>';
+  }).join('');
+}
+function toggleHideCake(id, hide){
+  api('adminSetCakeHidden', { token: localStorage.getItem('sm_token')||'', cakeId:id, hidden:hide })
+    .then(function(res){ if(res&&res.ok){ loadCakeCatalog().then(function(){ initAdminManage(); initAdminGF(); initAdminPhotos(); }); } }).catch(function(){});
+}
+function moveCake(id, dir){
+  var ids = CAKES.map(function(c){ return c.id; });
+  var i = ids.indexOf(id), j = i + dir;
+  if (i<0 || j<0 || j>=ids.length) return;
+  var tmp=ids[i]; ids[i]=ids[j]; ids[j]=tmp;
+  api('adminSetCakeOrder', { token: localStorage.getItem('sm_token')||'', order:ids })
+    .then(function(res){ if(res&&res.ok){ loadCakeCatalog().then(initAdminManage); } }).catch(function(){});
+}
+function deleteAddedCake(id){
+  if (!window.confirm(t('admin.deleteConfirm'))) return;
+  api('adminDeleteCake', { token: localStorage.getItem('sm_token')||'', cakeId:id })
+    .then(function(res){ if(res&&res.ok){ loadCakeCatalog().then(function(){ initAdminManage(); initAdminGF(); initAdminPhotos(); }); } }).catch(function(){});
 }
 
 /* ---- Admin cake-photo manager ---- */
@@ -3528,6 +3691,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('cakeModalOverlay').classList.remove('open');
   initStaticListeners();
   buildRibbon();
+  loadCakeCatalog();
   loadCakeImages();
   loadCakeFlags();
   generateSparkles();
@@ -3596,6 +3760,29 @@ var Mock = (function(){
     getCakeFlags:function(){ var gf; try{gf=JSON.parse(localStorage.getItem('sm_gf')||'{}');}catch(e){gf={};} var m={}; Object.keys(gf).forEach(function(k){ if(gf[k]) m[k]=true; }); return {ok:true,glutenFree:m}; },
     adminSetCakeFlag:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
       var gf; try{gf=JSON.parse(localStorage.getItem('sm_gf')||'{}');}catch(e){gf={};} gf[p.cakeId]=!!p.glutenFree; localStorage.setItem('sm_gf',JSON.stringify(gf)); return {ok:true,glutenFree:!!p.glutenFree}; },
+    getCakeCatalog:function(){
+      var added; try{added=JSON.parse(localStorage.getItem('sm_added')||'[]');}catch(e){added=[];}
+      var hid; try{hid=JSON.parse(localStorage.getItem('sm_hidden')||'{}');}catch(e){hid={};}
+      var ord; try{ord=JSON.parse(localStorage.getItem('sm_order')||'[]');}catch(e){ord=[];}
+      var hm={}; Object.keys(hid).forEach(function(k){ if(hid[k]) hm[k]=true; });
+      return {ok:true, added:added, hidden:hm, order:ord}; },
+    adminAddCake:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
+      var c=p.cake||{}; if(!c.name) return {ok:false,error:'Please enter at least a cake name.'};
+      var added; try{added=JSON.parse(localStorage.getItem('sm_added')||'[]');}catch(e){added=[];}
+      var max=999; added.forEach(function(x){ if(x.id>max) max=x.id; });
+      var img=c.img||p.dataUrl||'';
+      var cake={ id:max+1, name:c.name, nameRu:c.nameRu||'', category:c.category||'Specialty', tag:c.tag||'', tagRu:c.tagRu||'',
+        price:c.price||'', img:img, size:c.size||'', sizeRu:c.sizeRu||'', serves:c.serves||'', servesRu:c.servesRu||'',
+        desc:c.desc||'', descRu:c.descRu||'', ingr:c.ingr||'', ingrRu:c.ingrRu||'', variations: img?[{img:img}]:[] };
+      added.push(cake); localStorage.setItem('sm_added',JSON.stringify(added)); return {ok:true,cake:cake}; },
+    adminSetCakeHidden:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
+      var hid; try{hid=JSON.parse(localStorage.getItem('sm_hidden')||'{}');}catch(e){hid={};} hid[p.cakeId]=!!p.hidden; localStorage.setItem('sm_hidden',JSON.stringify(hid)); return {ok:true,hidden:!!p.hidden}; },
+    adminSetCakeOrder:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
+      localStorage.setItem('sm_order',JSON.stringify(Array.isArray(p.order)?p.order:[])); return {ok:true}; },
+    adminDeleteCake:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
+      var added; try{added=JSON.parse(localStorage.getItem('sm_added')||'[]');}catch(e){added=[];}
+      var n=added.length; added=added.filter(function(x){ return String(x.id)!==String(p.cakeId); });
+      localStorage.setItem('sm_added',JSON.stringify(added)); return added.length<n?{ok:true}:{ok:false,error:'Only admin-added cakes can be deleted.'}; },
     getPendingReviews:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.',reviews:[]};
       return {ok:true,reviews:get('sm_reviews').filter(function(r){return r.status==='pending';}).reverse()}; },
     moderateReview:function(p){ var a=userByToken(p.token); if(!a||a.role!=='admin') return {ok:false,error:'Admin only.'};
