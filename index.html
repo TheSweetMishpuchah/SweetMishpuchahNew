@@ -1247,7 +1247,8 @@
   .hero-fade { opacity: 0; transform: translateY(9px); }
   .stat-xfade { position:relative; width:2.4rem; height:2.4rem; margin:0 auto 0.3rem; border-radius:50%; overflow:hidden; box-shadow:0 4px 12px rgba(42,33,24,0.18); }
   .stat-xfade .stat-img { position:absolute; inset:0; width:100%; height:100%; margin:0; box-shadow:none; }
-  .gallery-xf { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .gallery-xf { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
+    transition-duration: 2.5s; }   /* gallery dissolve is longer/softer than the hero's (keeps the same smooth easing) */
 
   /* Review avatar can now hold a photo of the cake they ordered */
   .review-avatar { overflow: hidden; }
@@ -2827,7 +2828,7 @@ var CONFIG = {
   // ▼▼ PASTE YOUR GOOGLE APPS SCRIPT WEB-APP URL HERE (ends in /exec) ▼▼
   // This connects the GitHub Pages site to the Google backend (orders, accounts,
   // reviews, emails). Leave it "" to run as a local offline demo.
-  WEBAPP_URL: "https://script.google.com/macros/s/AKfycbzmqvK5sWiJY5tyWf7mxuKegl0G9e4YvUC2RNeqP8L8x5YF_JouVC4MoW0WqshWxSWP/exec",
+  WEBAPP_URL: "https://script.google.com/macros/s/AKfycbywPA3OzNwGaBsSlhOgssiDp9FJBU0G0K4C9BgdpnzMrRxXkebtkaxvBvtOo7shEDFc3A/exec",
   ADMIN_EMAIL: "thesweetmishpuchah@gmail.com",
   PICKUP_ADDRESS: "2404 East 28th Street, Brooklyn, New York, 11235",
   BLOCK_BEFORE_DAYS: 3,
@@ -3127,9 +3128,13 @@ function startHeroRotation(){
   heroTick();
   heroTimer = setInterval(heroTick, 5000);   // ~5s per cake (time to read the name + look)
 }
-/* GALLERY: a gentle wave of cross-fades sweeps across the cards in order — smooth,
-   followable, and never a synchronized flash. Modal (on click) is unchanged. */
+/* GALLERY: every card cross-fades to its next photo AT THE SAME TIME, on one shared
+   beat — one calm, synchronized dissolve across the whole grid. The card list and each
+   card's photo list are rebuilt from the live CAKES data on every render, so admin-added
+   cakes, new photos/variations, edits, and hides are picked up automatically (now and in
+   the future). Modal (on click) is unchanged. */
 var galleryTimer = null;
+var GALLERY_EVERY_MS = 3000;   // one synchronized change every 3s (the fade itself is 2.5s — set in CSS .gallery-xf)
 function startGalleryRotation(list){
   if (galleryTimer){ clearInterval(galleryTimer); galleryTimer = null; }
   var cards = document.querySelectorAll('#galleryGrid .gallery-item');
@@ -3139,15 +3144,12 @@ function startGalleryRotation(list){
     if (urls.length > 1 && cards[i]) state.push({ el:cards[i], urls:urls, idx:0 });
   });
   if (!state.length) return;
-  var W = Math.max(1, Math.ceil(state.length / 5));   // ~1/5 of the cards fade per step, in order
-  var pos = 0;
   galleryTimer = setInterval(function(){
-    for (var k = 0; k < W; k++){
-      var s = state[(pos + k) % state.length];
-      if (s){ s.idx = (s.idx + 1) % s.urls.length; xfadeTo(s.el, s.urls[s.idx]); }
-    }
-    pos = (pos + W) % state.length;            // the wave advances across the grid
-  }, 1300);   // each card refreshes ~every 6.5s
+    state.forEach(function(s){
+      s.idx = (s.idx + 1) % s.urls.length;     // every multi-photo card advances together
+      xfadeTo(s.el, s.urls[s.idx]);
+    });
+  }, GALLERY_EVERY_MS);
 }
 
 /* =====================  CAKE MODAL (with design variations)  ===================== */
